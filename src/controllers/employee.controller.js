@@ -26,8 +26,8 @@ const getListEmployee = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const personal = await db.PersonalTest.findAll();
-    return res.json(personal);
+    const employees = await mySqlInitModel.employee.findAll();
+    return res.json(employees);
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -116,7 +116,7 @@ const getEmployeeIntegration = async (req, res) => {
       return rest;
     })
 
-    return res.json({ mergeData })
+    return res.json(mergeData)
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
