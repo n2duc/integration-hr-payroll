@@ -12,7 +12,7 @@ export default function initMssqlModels(sequelize) {
   const JOB_HISTORY = jobHistoryModel(sequelize, DataTypes);
   const PERSONAL = personalModel(sequelize, DataTypes);
 
-  PERSONAL.belongsTo(BENEFIT_PLANS, { as: "BENEFIT_PLAN", foreignKey: "BENEFIT_PLAN_ID"});
+  PERSONAL.belongsTo(BENEFIT_PLANS, { as: "BENEFIT_PLANS", foreignKey: "BENEFIT_PLAN_ID"});
   BENEFIT_PLANS.hasMany(PERSONAL, { as: "PERSONAL", foreignKey: "BENEFIT_PLAN_ID"});
   EMPLOYMENT_WORKING_TIME.belongsTo(EMPLOYMENT, { as: "EMPLOYMENT", foreignKey: "EMPLOYMENT_ID"});
   EMPLOYMENT.hasMany(EMPLOYMENT_WORKING_TIME, { as: "EMPLOYMENT_WORKING_TIME", foreignKey: "EMPLOYMENT_ID"});
