@@ -2,7 +2,7 @@ import express from 'express';
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config";
-import db from './src/config.db.js';
+import db from './src/db.config.js';
 
 import routes from "./src/routes/index.js"
 
@@ -16,18 +16,21 @@ app.use(cookieParser());
 
 app.use("/api/v1", routes);
 
-// db.sqlServer.authenticate().then(() => {
-//   console.log('Connection has been established successfully - SQLServer.');
-// }).catch((error) => {
-//   console.error('Unable to connect to the database: ', error);
-// })
+db.sqlServer.authenticate().then(() => {
+  console.log('Connection has been established successfully - SQLServer.');
+}).catch((error) => {
+  console.error('Unable to connect to the database: ', error);
+})
 
-// db.mySQL.authenticate().then(() => {
-//   console.log('Connection has been established successfully - MySQL.');
-// }).catch((error) => {
-//   console.error('Unable to connect to the database: ', error);
-// })
+db.mySQL.authenticate().then(() => {
+  console.log('Connection has been established successfully - MySQL.');
+}).catch((error) => {
+  console.error('Unable to connect to the database: ', error);
+})
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT} - http://localhost:${PORT}`);
+  console.log('--------------------------------');
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`✨ http://localhost:${PORT}/api/v1`);
+  console.log('--------------------------------');
 });

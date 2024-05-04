@@ -1,4 +1,4 @@
-import db from "../config.db.js";
+import db from "../db.config.js";
 import initMySQLModels from "../models/mysql/init-models.js";
 import initMssqlModels from "../models/sqlserver/init-models.js";
 

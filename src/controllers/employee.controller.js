@@ -1,4 +1,6 @@
-import db from "../config.db.js";
+import { Sequelize } from "sequelize";
+import { format } from "date-fns";
+import db from "../db.config.js";
 import initMySQLModels from "../models/mysql/init-models.js";
 import initMssqlModels from "../models/sqlserver/init-models.js";
 import { employeeMSSQLQuery, employeeMySQLQuery } from "./queryConfig.js";
@@ -6,38 +8,8 @@ import { employeeMSSQLQuery, employeeMySQLQuery } from "./queryConfig.js";
 const mySqlInitModel = initMySQLModels(db.mySQL);
 const mssqlInitModel = initMssqlModels(db.sqlServer);
 
-const findPersonalById = async (id) => {
-  return await mssqlInitModel.PERSONAL.findByPk(id);
-};
-
-const createPersonal = async (req, res) => {
-  try {
-    const personal = await db.PersonalTest.create(req.body);
-    return res.json(personal);
-  } catch (error) {
-    return res.status(500).json({ statusCode: 500, error: error.message });
-  }
-};
-
-const deletePersonal = async (req, res) => {
-  try {
-    const idPersonal = req.params.id;
-    const existingPersonal = await findPersonalById(idPersonal);
-    if (!existingPersonal) {
-      return res
-        .status(404)
-        .json({ statusCode: 404, error: "Personal not found" });
-    }
-
-    await db.PersonalTest.destroy({ where: { Employee_ID: idPersonal } });
-
-    return res.json({
-      statusCode: 200,
-      message: `Personal with id ${idPersonal} is deleted successfully`,
-    });
-  } catch (error) {
-    return res.status(500).json({ statusCode: 500, error: error.message });
-  }
+const mergeName = (firstName, middleName, lastName) => {
+  return `${firstName} ${middleName ? middleName : ""} ${lastName}`;
 };
 
 const getEmployees = async (req, res) => {
@@ -65,9 +37,6 @@ const getEmployees = async (req, res) => {
       } = item;
       return {
         idEmployee,
-        // payRate,
-        // taxPercentage,
-        // Value,
         salary: (payRate * Value * (100 - taxPercentage)) / 100,
       };
     });
@@ -90,7 +59,7 @@ const getEmployees = async (req, res) => {
 const getEmployeeById = async (req, res) => {
   try {
     const _id = req.params.id;
-    const employee = await mySqlInitModel.employee.findByPk(req.params.id);
+    const employee = await mySqlInitModel.employee.findByPk(_id);
     if (!employee) {
       return res.status(404).json({ statusCode: 404, error: "Employee not found" });
     }
@@ -100,9 +69,60 @@ const getEmployeeById = async (req, res) => {
   }
 }
 
+const createEmployee = async (req, res) => {
+  try {
+    const data = req.body;
+    const exitsEmployee_ID = await mySqlInitModel.employee.findOne({
+      where: { idEmployee: data.idEmployee },
+    });
+    if (exitsEmployee_ID) {
+      return res.status(400).json({ statusCode: 400, error: "idEmployee already exists" });
+    }
+    const personal = await mssqlInitModel.PERSONAL.findByPk(data.idEmployee);
+    if (!personal) {
+      return res.status(400).json({ statusCode: 400, error: "PERSONAL_ID not found" });
+    }
+    const employee = await mySqlInitModel.employee.create(data);
+    console.log(data);
+    
+    return res.status(200).json(employee);
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
+const getEmployeeBenefits = async (req, res) => {
+  try {
+    const personal = await mssqlInitModel.PERSONAL.findAll({
+      attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "SHAREHOLDER_STATUS"],
+    });
+    return res.status(200).json(personal);
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
+const getListBirthdayRemainder = async (req, res) => {
+  try {
+    const today = new Date();
+    const people = await mssqlInitModel.PERSONAL.findAll({
+      attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "BIRTH_DATE", "CURRENT_GENDER"],
+      where: {
+        $and: Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('BIRTH_DATE')), today.getMonth() + 1),
+        // $and: Sequelize.where(Sequelize.fn('DAY', Sequelize.col('BIRTH_DATE')), today.getDate()), // lấy chính xác ngày sinh nhật hiện tại
+      }
+    })
+
+    return res.status(200).json(people);
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
 export default {
   getEmployees,
-  createPersonal,
-  deletePersonal,
+  createEmployee,
   getEmployeeById,
+  getEmployeeBenefits,
+  getListBirthdayRemainder,
 };
