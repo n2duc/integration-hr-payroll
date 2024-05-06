@@ -8,10 +8,6 @@ import { employeeMSSQLQuery, employeeMySQLQuery } from "./queryConfig.js";
 const mySqlInitModel = initMySQLModels(db.mySQL);
 const mssqlInitModel = initMssqlModels(db.sqlServer);
 
-const mergeName = (firstName, middleName, lastName) => {
-  return `${firstName} ${middleName ? middleName : ""} ${lastName}`;
-};
-
 const getEmployees = async (req, res) => {
   try {
     const employees = await mySqlInitModel.employee.findAll(employeeMySQLQuery);
@@ -50,7 +46,8 @@ const getEmployees = async (req, res) => {
       return rest;
     });
 
-    return res.json(mergeData);
+    return res.status(200).json(mergeData);
+    // return res.status(200).json({ employees, jobHistory });
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -60,10 +57,11 @@ const getEmployeeById = async (req, res) => {
   try {
     const _id = req.params.id;
     const employee = await mySqlInitModel.employee.findByPk(_id);
-    if (!employee) {
+    const personal = await mssqlInitModel.PERSONAL.findByPk(_id);
+    if (!employee || !personal) {
       return res.status(404).json({ statusCode: 404, error: "Employee not found" });
     }
-    return res.json(employee);
+    return res.status(200).json({ employee, personal });
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -71,20 +69,56 @@ const getEmployeeById = async (req, res) => {
 
 const createEmployee = async (req, res) => {
   try {
-    const data = req.body;
+    const { employeeId, firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country } = req.body;
     const exitsEmployee_ID = await mySqlInitModel.employee.findOne({
-      where: { idEmployee: data.idEmployee },
+      where: { idEmployee: employeeId },
     });
     if (exitsEmployee_ID) {
       return res.status(400).json({ statusCode: 400, error: "idEmployee already exists" });
     }
-    const personal = await mssqlInitModel.PERSONAL.findByPk(data.idEmployee);
-    if (!personal) {
-      return res.status(400).json({ statusCode: 400, error: "PERSONAL_ID not found" });
-    }
-    const employee = await mySqlInitModel.employee.create(data);
-    console.log(data);
+
+    const newLastName = `${lastName} ${middleName}`;
+
+    const employeesMySQL = await mySqlInitModel.employee.create({
+      idEmployee: employeeId,
+      employeeNumber: employeeId,
+      firstName: firstName,
+      lastName: newLastName,
+      SSN: ssNumber,
+      payRates_idPayRates: 1,
+    });
+
+    const employeeMSSQL = await mssqlInitModel.PERSONAL.create({
+      PERSONAL_ID: employeeId,
+      CURRENT_FIRST_NAME: firstName,
+      CURRENT_LAST_NAME: lastName,
+      CURRENT_MIDDLE_NAME: middleName,
+      BIRTH_DATE: format(new Date(birthDay), "yyyy-MM-dd"),
+      SOCIAL_SECURITY_NUMBER: ssNumber,
+      CURRENT_ADDRESS_1: address,
+      CURRENT_COUNTRY: country,
+      CURRENT_GENDER: gender,
+      CURRENT_PHONE_NUMBER: phoneNumber,
+      CURRENT_PERSONAL_EMAIL: email,
+    });
     
+    return res.status(200).json({ employeesMySQL, employeeMSSQL });
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
+// update information of employee by id
+const updateEmployee = async (req, res) => {
+  try {
+    const _id = req.params.id;
+    const updateData = req.body;
+    const employee = await mySqlInitModel.employee.findByPk(_id);
+    if (!employee) {
+      return res.status(404).json({ statusCode: 404, error: "Employee not found" });
+    }
+    await employee.update(updateData);
+
     return res.status(200).json(employee);
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
@@ -125,4 +159,5 @@ export default {
   getEmployeeById,
   getEmployeeBenefits,
   getListBirthdayRemainder,
+  updateEmployee,
 };
