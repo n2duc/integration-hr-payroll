@@ -1,17 +1,17 @@
 import { Sequelize } from "sequelize";
 import { format } from "date-fns";
-import db from "../db.config.js";
+import db from "../configs/db.config.js";
 import initMySQLModels from "../models/mysql/init-models.js";
 import initMssqlModels from "../models/sqlserver/init-models.js";
-import { employeeMSSQLQuery, employeeMySQLQuery } from "./queryConfig.js";
+import { employeeQuery } from "../configs/query.config.js";
 
 const mySqlInitModel = initMySQLModels(db.mySQL);
 const mssqlInitModel = initMssqlModels(db.sqlServer);
 
 const getEmployees = async (req, res) => {
   try {
-    const employees = await mySqlInitModel.employee.findAll(employeeMySQLQuery);
-    const jobHistory = await mssqlInitModel.JOB_HISTORY.findAll(employeeMSSQLQuery);
+    const employees = await mySqlInitModel.employee.findAll(employeeQuery.getMySQL);
+    const jobHistory = await mssqlInitModel.JOB_HISTORY.findAll(employeeQuery.getMSSQL);
 
     const newData = jobHistory.map((item) => {
       const {
@@ -112,14 +112,39 @@ const createEmployee = async (req, res) => {
 const updateEmployee = async (req, res) => {
   try {
     const _id = req.params.id;
-    const updateData = req.body;
+    // const updateData = req.body;
+    // const { firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country } = req.body;
+    const { firstName, lastName, ssNumber, gender, birthDay, phoneNumber, email, address, country } = req.body;
     const employee = await mySqlInitModel.employee.findByPk(_id);
-    if (!employee) {
+    const personal = await mssqlInitModel.PERSONAL.findByPk(_id);
+
+    const [CURRENT_LAST_NAME, ...CURRENT_MIDDLE_NAME] = lastName.split(" ");
+
+    if (!employee || !personal) {
       return res.status(404).json({ statusCode: 404, error: "Employee not found" });
     }
-    await employee.update(updateData);
 
-    return res.status(200).json(employee);
+    // upodate data
+    await employee.update({
+      firstName,
+      lastName,
+      SSN: ssNumber,
+    });
+    
+    await personal.update({
+      CURRENT_FIRST_NAME: firstName,
+      CURRENT_LAST_NAME,
+      CURRENT_MIDDLE_NAME: CURRENT_MIDDLE_NAME.join(" "),
+      SOCIAL_SECURITY_NUMBER: ssNumber,
+      BIRTH_DATE: format(new Date(birthDay), "yyyy-MM-dd"),
+      CURRENT_ADDRESS_1: address,
+      CURRENT_COUNTRY: country,
+      CURRENT_GENDER: gender,
+      CURRENT_PHONE_NUMBER: phoneNumber,
+      CURRENT_PERSONAL_EMAIL: email,
+    });
+
+    return res.status(200).json({ employee, personal });
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
