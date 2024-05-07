@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use("/api/v1", routes);
+app.use("/api", routes);
 
 db.sqlServer.authenticate().then(() => {
   console.log('Connection has been established successfully - SQLServer.');
@@ -31,6 +31,6 @@ db.mySQL.authenticate().then(() => {
 app.listen(PORT, () => {
   console.log('--------------------------------');
   console.log(`Server is running on port ${PORT}`);
-  console.log(`✨ http://localhost:${PORT}/api/v1`);
+  console.log(`✨ http://localhost:${PORT}/api`);
   console.log('--------------------------------');
 });

@@ -1,8 +1,11 @@
 import { Sequelize } from "sequelize";
 import { format } from "date-fns";
+
 import db from "../configs/db.config.js";
 import initMySQLModels from "../models/mysql/init-models.js";
 import initMssqlModels from "../models/sqlserver/init-models.js";
+
+// import responseHandller from "../handlers/response.handler.js"
 import { employeeQuery } from "../configs/query.config.js";
 
 const mySqlInitModel = initMySQLModels(db.mySQL);
@@ -53,6 +56,32 @@ const getEmployees = async (req, res) => {
   }
 };
 
+const getEmployeesInfoDetail = async (req, res) => {
+  try {
+    const employments = await mssqlInitModel.EMPLOYMENT.findAll({
+      attributes: ["EMPLOYMENT_ID", "EMPLOYMENT_STATUS"],
+      include: [
+        {
+          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_GENDER", "ETHNICITY", "SHAREHOLDER_STATUS"],
+          model: mssqlInitModel.PERSONAL,
+          required: true,
+          as: "PERSONAL",
+        },
+        {
+          attributes: ["JOB_HISTORY_ID", "DEPARTMENT"],
+          model: mssqlInitModel.JOB_HISTORY,
+          required: true,
+          as: "JOB_HISTORY",
+        }
+      ]
+    })
+
+    return res.status(200).json(employments);
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
 const getEmployeeById = async (req, res) => {
   try {
     const _id = req.params.id;
@@ -69,7 +98,7 @@ const getEmployeeById = async (req, res) => {
 
 const createEmployee = async (req, res) => {
   try {
-    const { employeeId, firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country } = req.body;
+    const { employeeId, firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country, payRateId } = req.body;
     const exitsEmployee_ID = await mySqlInitModel.employee.findOne({
       where: { idEmployee: employeeId },
     });
@@ -85,7 +114,7 @@ const createEmployee = async (req, res) => {
       firstName: firstName,
       lastName: newLastName,
       SSN: ssNumber,
-      payRates_idPayRates: 1,
+      payRates_idPayRates: payRateId,
     });
 
     const employeeMSSQL = await mssqlInitModel.PERSONAL.create({
@@ -100,9 +129,17 @@ const createEmployee = async (req, res) => {
       CURRENT_GENDER: gender,
       CURRENT_PHONE_NUMBER: phoneNumber,
       CURRENT_PERSONAL_EMAIL: email,
+      ETHNICITY: "Vietnamese",
+      SHAREHOLDER_STATUS: 1,
     });
+
+    const employments = await mssqlInitModel.EMPLOYMENT.create({
+      PERSONAL_ID: employeeId,
+      EMPLOYMENT_ID: employeeId,
+      EMPLOYMENT_STATUS: "full-time",
+    })
     
-    return res.status(200).json({ employeesMySQL, employeeMSSQL });
+    return res.status(200).json({ employeesMySQL, employeeMSSQL, employments });
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -180,6 +217,7 @@ const getListBirthdayRemainder = async (req, res) => {
 
 export default {
   getEmployees,
+  getEmployeesInfoDetail,
   createEmployee,
   getEmployeeById,
   getEmployeeBenefits,
