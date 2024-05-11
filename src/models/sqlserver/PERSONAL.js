@@ -3,7 +3,7 @@ export default function model(sequelize, DataTypes) {
     PERSONAL_ID: {
       type: DataTypes.DECIMAL(18,0),
       allowNull: false,
-      primaryKey: true
+      primaryKey: true,
     },
     CURRENT_FIRST_NAME: {
       type: DataTypes.STRING(50),

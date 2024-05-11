@@ -3,6 +3,6 @@ import vacationController from '../controllers/vacation.controller.js';
 
 const router = express.Router({ mergeParams: true });
 
-router.get('/vacation-summary', vacationController.getTotalVacation)
+router.get('/', vacationController.getTotalVacation)
 
 export default router;

@@ -3,12 +3,12 @@ export default function model(sequelize, DataTypes) {
   return sequelize.define('employee', {
     idEmployee: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
     },
     employeeNumber: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      primaryKey: true
+      primaryKey: true,
     },
     lastName: {
       type: DataTypes.STRING(45),
