@@ -58,8 +58,17 @@ A centralized dashboard application for managing HR and Payroll data, built usin
    npm start
    ```
 
-2. **Access the dashboard:** 
-    Open `http://localhost:3000` (or your configured port) in your web browser.
+2. **Access the api:** 
+   ```bash
+   http://localhost:8080/api/employees
+   http://localhost:8080/api/employees/1
+   http://localhost:8080/api/vacations
+   http://localhost:8080/api/incomes
+   http://localhost:8080/api/benefit
+   http://localhost:8080/api/vacations/birthday
+   http://localhost:8080/api/vacations/excess-vacation
+   http://localhost:8080/api/vacations/anniversary/
+   ```
 
 ## Contributing
 
