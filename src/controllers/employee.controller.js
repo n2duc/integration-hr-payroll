@@ -20,7 +20,7 @@ const getEmployees = async (req, res) => {
       attributes: ["EMPLOYMENT_ID", "EMPLOYMENT_STATUS"],
       include: [
         {
-          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_PERSONAL_EMAIL", "CURRENT_GENDER", "ETHNICITY", "SHAREHOLDER_STATUS"],
+          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_PERSONAL_EMAIL", "CURRENT_PHONE_NUMBER", "CURRENT_GENDER", "ETHNICITY", "SHAREHOLDER_STATUS"],
           model: mssqlInitModel.PERSONAL,
           as: "PERSONAL",
         }
@@ -72,11 +72,57 @@ const getEmployeeById = async (req, res) => {
       ]
     })
 
+    const employee = await mySqlInitModel.employee.findByPk(_id, {
+      attributes: ['idEmployee', 'firstName', 'lastName', 'SSN', 'payRate', 'payRates_idPayRates', 'vacationDays'],
+      include: [
+        {
+          model: mySqlInitModel.payrates,
+          as: "payrates",
+        }
+      ],
+    });
+
+    if (!employee) {
+      return res.status(404).json({ statusCode: 404, error: "Employee not found" });
+    }
+
     if (!employments) {
       return res.status(404).json({ statusCode: 404, error: "Employee not found" });
     }
 
-    return res.status(200).json(employments);
+    const mergeData = { ...employments.dataValues, ...employee.dataValues };
+    const { PERSONAL: { CURRENT_FIRST_NAME, CURRENT_LAST_NAME, CURRENT_MIDDLE_NAME, CURRENT_GENDER, CURRENT_PERSONAL_EMAIL, CURRENT_PHONE_NUMBER, BIRTH_DATE, SOCIAL_SECURITY_NUMBER, DRIVERS_LICENSE, CURRENT_ADDRESS_1, CURRENT_ADDRESS_2, CURRENT_CITY, CURRENT_ZIP, CURRENT_COUNTRY, CURRENT_MARITAL_STATUS, ETHNICITY, SHAREHOLDER_STATUS, BENEFIT_PLAN_ID }, JOB_HISTORY, payrates, payrates: { idPayRates }, EMPLOYMENT_STATUS, HIRE_DATE_FOR_WORKING, WORKERS_COMP_CODE, TERMINATION_DATE, NUMBER_DAYS_REQUIREMENT_OF_WORKING_PER_MONTH, vacationDays } = mergeData;
+
+    const responseData = {
+      firstname: CURRENT_FIRST_NAME,
+      lastname: `${CURRENT_LAST_NAME} ${CURRENT_MIDDLE_NAME}`,
+      gender: CURRENT_GENDER,
+      email: CURRENT_PERSONAL_EMAIL,
+      phoneNumber: CURRENT_PHONE_NUMBER,
+      birthDay: BIRTH_DATE,
+      ssNumber: SOCIAL_SECURITY_NUMBER,
+      driverLicense: DRIVERS_LICENSE,
+      address1: CURRENT_ADDRESS_1,
+      address2: CURRENT_ADDRESS_2,
+      city: CURRENT_CITY,
+      zipCode: CURRENT_ZIP,
+      country: CURRENT_COUNTRY,
+      ethnicity: ETHNICITY.trimEnd(),
+      employmentStatus: EMPLOYMENT_STATUS.trimEnd(),
+      payRateId: idPayRates,
+      shareholderStatus: SHAREHOLDER_STATUS,
+      benefitPlanId: BENEFIT_PLAN_ID,
+      maritalStatus: CURRENT_MARITAL_STATUS,
+      vacationDays: vacationDays,
+      hireDate: HIRE_DATE_FOR_WORKING,
+      terminationDate: TERMINATION_DATE,
+      WORKERS_COMP_CODE,
+      NUMBER_DAYS_REQUIREMENT_OF_WORKING_PER_MONTH,
+      JOB_HISTORY,
+      payrates,
+    }
+
+    return res.status(200).json(responseData);
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -84,7 +130,11 @@ const getEmployeeById = async (req, res) => {
 
 const createEmployee = async (req, res) => {
   try {
-    const { employeeId, firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country, payRateId } = req.body;
+    const { firstname, lastname, gender, email, phoneNumber, birthDay, ssNumber, driverLicense, address1, address2, city, zipCode, country, ethnicity, employmentStatus, payRateId, shareholderStatus, benefitPlanId, maritalStatus, vacationDays, hireDate, terminationDate } = req.body;
+
+    const maxPersonalId = await mssqlInitModel.PERSONAL.max("PERSONAL_ID");
+    const employeeId = maxPersonalId + 1;
+
     const exitsEmployee_ID = await mySqlInitModel.employee.findOne({
       where: { idEmployee: employeeId },
     });
@@ -92,37 +142,48 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ statusCode: 400, error: "idEmployee already exists" });
     }
 
-    const newLastName = `${lastName} ${middleName}`;
+
+    // const newLastName = `${lastName} ${middleName}`;
+    const [CURRENT_LAST_NAME, ...CURRENT_MIDDLE_NAME] = lastname.split(" ");
 
     const employeesMySQL = await mySqlInitModel.employee.create({
       idEmployee: employeeId,
       employeeNumber: employeeId,
-      firstName: firstName,
-      lastName: newLastName,
+      firstName: firstname,
+      lastName: lastname,
       SSN: ssNumber,
       payRates_idPayRates: payRateId,
+      vacationDays: vacationDays,
     });
 
     const employeeMSSQL = await mssqlInitModel.PERSONAL.create({
       PERSONAL_ID: employeeId,
-      CURRENT_FIRST_NAME: firstName,
-      CURRENT_LAST_NAME: lastName,
-      CURRENT_MIDDLE_NAME: middleName,
+      CURRENT_FIRST_NAME: firstname,
+      CURRENT_LAST_NAME,
+      CURRENT_MIDDLE_NAME: CURRENT_MIDDLE_NAME.join(" "),
       BIRTH_DATE: format(new Date(birthDay), "yyyy-MM-dd"),
       SOCIAL_SECURITY_NUMBER: ssNumber,
-      CURRENT_ADDRESS_1: address,
+      DRIVERS_LICENSE: driverLicense,
+      CURRENT_ADDRESS_1: address1,
+      CURRENT_ADDRESS_2: address2,
+      CURRENT_CITY: city,
       CURRENT_COUNTRY: country,
+      CURRENT_ZIP: zipCode,
       CURRENT_GENDER: gender,
       CURRENT_PHONE_NUMBER: phoneNumber,
       CURRENT_PERSONAL_EMAIL: email,
-      ETHNICITY: "Vietnamese",
-      SHAREHOLDER_STATUS: 1,
+      CURRENT_MARITAL_STATUS: maritalStatus,
+      ETHNICITY: ethnicity,
+      SHAREHOLDER_STATUS: shareholderStatus,
+      BENEFIT_PLAN_ID: benefitPlanId,
     });
 
     const employments = await mssqlInitModel.EMPLOYMENT.create({
       PERSONAL_ID: employeeId,
       EMPLOYMENT_ID: employeeId,
-      EMPLOYMENT_STATUS: "full-time",
+      EMPLOYMENT_STATUS: employmentStatus,
+      HIRE_DATE_FOR_WORKING: format(new Date(hireDate), "yyyy-MM-dd"),
+      TERMINATION_DATE: format(new Date(terminationDate), "yyyy-MM-dd"),
     })
     
     return res.status(200).json({ employeesMySQL, employeeMSSQL, employments });
@@ -137,11 +198,13 @@ const updateEmployee = async (req, res) => {
     const _id = req.params.id;
     // const updateData = req.body;
     // const { firstName, middleName, lastName, gender, birthDay, ssNumber, phoneNumber, email, address, country } = req.body;
-    const { firstName, lastName, ssNumber, gender, birthDay, phoneNumber, email, address, country } = req.body;
+    const { firstname, lastname, gender, email, phoneNumber, birthDay, ssNumber, driverLicense, address1, address2, city, zipCode, country, ethnicity, employmentStatus, payRateId, shareholderStatus, benefitPlanId, maritalStatus, vacationDays, hireDate, terminationDate } = req.body;
+
     const employee = await mySqlInitModel.employee.findByPk(_id);
     const personal = await mssqlInitModel.PERSONAL.findByPk(_id);
+    const employment = await mssqlInitModel.EMPLOYMENT.findByPk(_id);
 
-    const [CURRENT_LAST_NAME, ...CURRENT_MIDDLE_NAME] = lastName.split(" ");
+    const [CURRENT_LAST_NAME, ...CURRENT_MIDDLE_NAME] = lastname.split(" ");
 
     if (!employee || !personal) {
       return res.status(404).json({ statusCode: 404, error: "Employee not found" });
@@ -149,25 +212,41 @@ const updateEmployee = async (req, res) => {
 
     // upodate data
     await employee.update({
-      firstName,
-      lastName,
+      firstName: firstname,
+      lastName: lastname,
       SSN: ssNumber,
+      payRates_idPayRates: payRateId,
+      vacationDays: vacationDays,
     });
     
     await personal.update({
-      CURRENT_FIRST_NAME: firstName,
+      CURRENT_FIRST_NAME: firstname,
       CURRENT_LAST_NAME,
       CURRENT_MIDDLE_NAME: CURRENT_MIDDLE_NAME.join(" "),
-      SOCIAL_SECURITY_NUMBER: ssNumber,
       BIRTH_DATE: format(new Date(birthDay), "yyyy-MM-dd"),
-      CURRENT_ADDRESS_1: address,
+      SOCIAL_SECURITY_NUMBER: ssNumber,
+      DRIVERS_LICENSE: driverLicense,
+      CURRENT_ADDRESS_1: address1,
+      CURRENT_ADDRESS_2: address2,
+      CURRENT_CITY: city,
       CURRENT_COUNTRY: country,
+      CURRENT_ZIP: zipCode,
       CURRENT_GENDER: gender,
       CURRENT_PHONE_NUMBER: phoneNumber,
       CURRENT_PERSONAL_EMAIL: email,
+      CURRENT_MARITAL_STATUS: maritalStatus,
+      ETHNICITY: ethnicity,
+      SHAREHOLDER_STATUS: shareholderStatus,
+      BENEFIT_PLAN_ID: benefitPlanId,
     });
 
-    return res.status(200).json({ employee, personal });
+    await employment.update({
+      EMPLOYMENT_STATUS: employmentStatus,
+      HIRE_DATE_FOR_WORKING: format(new Date(hireDate), "yyyy-MM-dd"),
+      TERMINATION_DATE: format(new Date(terminationDate), "yyyy-MM-dd"),
+    })
+
+    return res.status(200).json({ statusCode: 200, message: "Update success" });
   } catch (error) {
     return res.status(500).json({ statusCode: 500, error: error.message });
   }
@@ -179,6 +258,9 @@ const deleteEmployee = async (req, res) => {
     const employee = await mySqlInitModel.employee.findByPk(_id);
     const personal = await mssqlInitModel.PERSONAL.findByPk(_id);
     const employment = await mssqlInitModel.EMPLOYMENT.findByPk(_id);
+    const employmentWorkingTime = await mssqlInitModel.EMPLOYMENT_WORKING_TIME.findAll({
+      where: { EMPLOYMENT_ID: _id },
+    });
     const jobHistory = await mssqlInitModel.JOB_HISTORY.findAll({
       where: { EMPLOYMENT_ID: _id },
     });
@@ -190,6 +272,9 @@ const deleteEmployee = async (req, res) => {
     await employee.destroy();
     await personal.destroy();
     await employment.destroy();
+    if (employmentWorkingTime) {
+      await employmentWorkingTime.map((employment) => employment.destroy());
+    }
     if (jobHistory) {
       await jobHistory.map((job) => job.destroy());
     }

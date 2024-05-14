@@ -14,6 +14,10 @@ const getAverageBenefits  = async (req, res) => {
       },
       attributes: [
         "PERSONAL_ID",
+        "CURRENT_FIRST_NAME",
+        "CURRENT_LAST_NAME",
+        "CURRENT_MIDDLE_NAME",
+        "CURRENT_GENDER",
         "SHAREHOLDER_STATUS",
         "BENEFIT_PLAN_ID",
         [Sequelize.fn('AVG', Sequelize.col('BENEFIT_PLANS.DEDUCTABLE')), 'averageDeductable'],
@@ -28,7 +32,7 @@ const getAverageBenefits  = async (req, res) => {
         }
       ],
       raw: true,
-      group: ['PERSONAL.PERSONAL_ID', 'PERSONAL.BENEFIT_PLAN_ID', 'PERSONAL.SHAREHOLDER_STATUS', 'BENEFIT_PLANS.BENEFIT_PLANS_ID', 'BENEFIT_PLANS.PLAN_NAME'],
+      group: ['PERSONAL.PERSONAL_ID', 'PERSONAL.CURRENT_FIRST_NAME', 'PERSONAL.CURRENT_LAST_NAME', 'PERSONAL.CURRENT_MIDDLE_NAME', 'PERSONAL.BENEFIT_PLAN_ID', 'PERSONAL.CURRENT_GENDER',  'PERSONAL.SHAREHOLDER_STATUS', 'BENEFIT_PLANS.BENEFIT_PLANS_ID', 'BENEFIT_PLANS.PLAN_NAME'],
     });
 
     return res.status(200).json(averageBenefits);

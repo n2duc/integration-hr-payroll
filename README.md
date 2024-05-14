@@ -65,9 +65,9 @@ A centralized dashboard application for managing HR and Payroll data, built usin
    http://localhost:8080/api/vacations
    http://localhost:8080/api/incomes
    http://localhost:8080/api/benefit
-   http://localhost:8080/api/vacations/birthday
-   http://localhost:8080/api/vacations/excess-vacation
-   http://localhost:8080/api/vacations/anniversary/
+   http://localhost:8080/api/alert/birthday
+   http://localhost:8080/api/alert/excess-vacation
+   http://localhost:8080/api/alert/anniversary
    ```
 
 ## Contributing

@@ -48,6 +48,25 @@ const getTotalVacation = async (req, res) => {
       raw: true
     });
 
+    const employments = await mssqlInitModel.EMPLOYMENT.findAll({
+      attributes: ["EMPLOYMENT_ID", "EMPLOYMENT_STATUS"],
+      include: [
+        {
+          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_GENDER", "SHAREHOLDER_STATUS", "ETHNICITY"],
+          model: mssqlInitModel.PERSONAL,
+          as: "PERSONAL",
+        },
+        {
+          attributes: ["YEAR_WORKING", "MONTH_WORKING", "NUMBER_DAYS_ACTUAL_OF_WORKING_PER_MONTH", "TOTAL_NUMBER_VACATION_WORKING_DAYS_PER_MONTH"],
+          model: mssqlInitModel.EMPLOYMENT_WORKING_TIME,
+          as: "EMPLOYMENT_WORKING_TIME",
+          where: {
+            $and: Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('YEAR_WORKING')), new Date().getFullYear()),
+          }
+        }
+      ],
+    });
+
     const mergeData = personals.map((item) => {
       const monthWorking = item['EMPLOYMENT.EMPLOYMENT_WORKING_TIME.MONTH_WORKING'];
       const totalVacation = item['EMPLOYMENT.EMPLOYMENT_WORKING_TIME.TOTAL_NUMBER_VACATION_WORKING_DAYS_PER_MONTH'];

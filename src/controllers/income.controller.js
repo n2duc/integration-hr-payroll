@@ -21,16 +21,21 @@ const getTotalIncome = async (req, res) => {
       attributes: ["EMPLOYMENT_ID", "EMPLOYMENT_STATUS"],
       include: [
         {
-          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_GENDER", "ETHNICITY", "SHAREHOLDER_STATUS"],
+          attributes: ["PERSONAL_ID", "CURRENT_FIRST_NAME", "CURRENT_LAST_NAME", "CURRENT_MIDDLE_NAME", "CURRENT_GENDER", "CURRENT_PERSONAL_EMAIL", "ETHNICITY", "SHAREHOLDER_STATUS"],
           model: mssqlInitModel.PERSONAL,
           required: true,
           as: "PERSONAL",
         },
+        {
+          attributes: ["JOB_HISTORY_ID", "DEPARTMENT", "JOB_TITLE"],
+          model: mssqlInitModel.JOB_HISTORY,
+          as: "JOB_HISTORY",
+        }
       ]
     })
 
     const flatData = employments.map((employment) => {
-      const { EMPLOYMENT_ID, EMPLOYMENT_STATUS, PERSONAL: { PERSONAL_ID, CURRENT_FIRST_NAME, CURRENT_LAST_NAME, CURRENT_MIDDLE_NAME, CURRENT_GENDER, ETHNICITY, SHAREHOLDER_STATUS } } = employment;
+      const { EMPLOYMENT_ID, EMPLOYMENT_STATUS, PERSONAL: { PERSONAL_ID, CURRENT_FIRST_NAME, CURRENT_LAST_NAME, CURRENT_MIDDLE_NAME, CURRENT_GENDER, CURRENT_PERSONAL_EMAIL, ETHNICITY, SHAREHOLDER_STATUS }, JOB_HISTORY } = employment;
 
       return {
         EMPLOYMENT_ID,
@@ -40,8 +45,10 @@ const getTotalIncome = async (req, res) => {
         CURRENT_LAST_NAME,
         CURRENT_MIDDLE_NAME,
         CURRENT_GENDER,
+        CURRENT_PERSONAL_EMAIL,
         ETHNICITY,
-        SHAREHOLDER_STATUS
+        SHAREHOLDER_STATUS,
+        JOB_HISTORY: JOB_HISTORY[0],
       }
     })
 
