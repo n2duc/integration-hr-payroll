@@ -9,5 +9,7 @@ router.get('/birthday', alertController.getListBirthdayRemainder);
 router.get('/anniversary', alertController.getListAnniversaryRemainder);
 // Get all alerts for employee with excess vacation
 router.get('/excess-vacation', alertController.getListEmployeesWithExcessVacation);
+// Employees make a change to their benefits plan that affects their payroll
+router.get('/benefit-plan-change', alertController.getEmployeesChangeBenefitPlan);
 
 export default router;

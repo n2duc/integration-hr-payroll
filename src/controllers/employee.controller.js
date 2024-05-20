@@ -130,7 +130,7 @@ const getEmployeeById = async (req, res) => {
 
 const createEmployee = async (req, res) => {
   try {
-    const { firstname, lastname, gender, email, phoneNumber, birthDay, ssNumber, driverLicense, address1, address2, city, zipCode, country, ethnicity, employmentStatus, payRateId, shareholderStatus, benefitPlanId, maritalStatus, vacationDays, hireDate, terminationDate } = req.body;
+    const { firstname, lastname, gender, email, phoneNumber, birthDay, ssNumber, driverLicense, address1, address2, city, zipCode, country, ethnicity, employmentStatus, payRateId, shareholderStatus, benefitPlanId, maritalStatus, vacationDays, hireDate, terminationDate, jobHistory } = req.body;
 
     const maxPersonalId = await mssqlInitModel.PERSONAL.max("PERSONAL_ID");
     const employeeId = maxPersonalId + 1;
@@ -185,6 +185,25 @@ const createEmployee = async (req, res) => {
       HIRE_DATE_FOR_WORKING: format(new Date(hireDate), "yyyy-MM-dd"),
       TERMINATION_DATE: format(new Date(terminationDate), "yyyy-MM-dd"),
     })
+
+    if (jobHistory && jobHistory.length > 0) {
+      let maxJobHistoryId = await mssqlInitModel.JOB_HISTORY.max("JOB_HISTORY_ID");
+
+      for (const job of jobHistory) {
+        const { department, jobTitle, startDate, endDate, location } = job;
+        const jobHistoryId = ++maxJobHistoryId;
+
+        await mssqlInitModel.JOB_HISTORY.create({
+          JOB_HISTORY_ID: jobHistoryId,
+          EMPLOYMENT_ID: employeeId,
+          DEPARTMENT: department,
+          JOB_TITLE: jobTitle,
+          FROM_DATE: format(new Date(startDate), "yyyy-MM-dd"),
+          THRU_DATE: format(new Date(endDate), "yyyy-MM-dd"),
+          LOCATION: location,
+        });
+      }
+    }
     
     return res.status(200).json({ employeesMySQL, employeeMSSQL, employments });
   } catch (error) {

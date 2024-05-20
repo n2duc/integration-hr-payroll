@@ -123,8 +123,55 @@ const getListEmployeesWithExcessVacation = async (req, res) => {
   }
 }
 
+// Employees make a change to their benefits plan that affects their payroll
+const getEmployeesChangeBenefitPlan = async (req, res) => {
+  try {
+    const changesThreshold = 7; // Number of days to consider recent changes
+    const today = new Date();
+    const recentChangesDate = new Date(today.setDate(today.getDate() - changesThreshold));
+
+    const changes = await mssqlInitModel.BENEFIT_PLANS.findAll({
+      where: {
+        updateAt: {
+          [Sequelize.Op.gte]: recentChangesDate,
+        }
+      },
+      attributes: ['BENEFIT_PLANS_ID', 'PLAN_NAME', 'DEDUCTABLE', 'PERCENTAGE_COPAY', 'updatedAt'],
+    });
+
+    // Check changes
+    if (changes.length === 0) {
+      return res.status(200).json({ message: "No recent changes in benefit plans" });
+    }
+
+    // Get personal details of employees who have these benefit plans
+    const benefitsPlanIds = changes.map((change) => change.BENEFIT_PLANS_ID);
+    const employees = await mssqlInitModel.PERSONAL.findAll({
+      where: {
+        BENEFIT_PLANS_ID: {
+          [Sequelize.Op.in]: benefitsPlanIds,
+        },
+      },
+      attributes: ['PERSONAL_ID', 'CURRENT_FIRST_NAME', 'CURRENT_LAST_NAME', 'CURRENT_PERSONAL_EMAIL', 'BENEFIT_PLAN_ID']
+    })
+
+    const data = employees.map((employee) => {
+      const change = changes.find((change) => change.BENEFIT_PLANS_ID === employee.BENEFIT_PLAN_ID);
+      return {
+        ...employee.dataValues,
+        ...change.dataValues,
+      }
+    });
+
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ statusCode: 500, error: error.message });
+  }
+}
+
 export default { 
   getListBirthdayRemainder,
   getListAnniversaryRemainder,
   getListEmployeesWithExcessVacation,
+  getEmployeesChangeBenefitPlan,
 };
