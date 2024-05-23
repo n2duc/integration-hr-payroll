@@ -1,8 +1,6 @@
-# SERVER của ứng dụng tích hợp 2 hệ thống HR & Payroll
-
 `N2D`
 
-# HR & Payroll Dashboard 
+# HR & Payroll Dashboard (SERVER)
 
 A centralized dashboard application for managing HR and Payroll data, built using Node.js, Express.js, and Sequelize.
 
@@ -11,7 +9,6 @@ A centralized dashboard application for managing HR and Payroll data, built usin
 * **Employee Management:** View, add, edit, and manage employee profiles from the HR database.
 * **Payroll Processing:** Calculate salaries, generate payslips, and track payroll history from the Payroll database.
 * **Reporting:** Generate customizable reports on HR and payroll metrics.
-* **User Authentication:** Secure login system to control access.
 * **Dashboard Interface:** Intuitive and user-friendly interface to visualize data.
 
 ## Installation
@@ -23,7 +20,7 @@ A centralized dashboard application for managing HR and Payroll data, built usin
 
 2. **Install dependencies:**
    ```bash
-   cd hr-payroll-dashboard
+   cd integration-hr-payroll
    npm install 
    ```
 
@@ -60,14 +57,17 @@ A centralized dashboard application for managing HR and Payroll data, built usin
 
 2. **Access the api:** 
    ```bash
-   http://localhost:8080/api/employees
-   http://localhost:8080/api/employees/1
-   http://localhost:8080/api/vacations
-   http://localhost:8080/api/incomes
-   http://localhost:8080/api/benefit
-   http://localhost:8080/api/alert/birthday
-   http://localhost:8080/api/alert/excess-vacation
-   http://localhost:8080/api/alert/anniversary
+   [GET] http://localhost:8080/api/employees
+   [POST] http://localhost:8080/api/employees
+   [GET] http://localhost:8080/api/employees/1
+   [PUT] http://localhost:8080/api/employees/1
+   [DELETE] http://localhost:8080/api/employees/1
+   [GET] http://localhost:8080/api/vacations
+   [GET] http://localhost:8080/api/incomes
+   [GET] http://localhost:8080/api/benefits
+   [GET] http://localhost:8080/api/alert/birthday
+   [GET] http://localhost:8080/api/alert/excess-vacation
+   [GET] http://localhost:8080/api/alert/anniversary
    ```
 
 ## Contributing
