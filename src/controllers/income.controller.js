@@ -48,7 +48,7 @@ const getTotalIncome = async (req, res) => {
         CURRENT_PERSONAL_EMAIL,
         ETHNICITY,
         SHAREHOLDER_STATUS,
-        JOB_HISTORY: JOB_HISTORY[0],
+        JOB_HISTORY: JOB_HISTORY[0]?.DEPARTMENT,
       }
     })
 
